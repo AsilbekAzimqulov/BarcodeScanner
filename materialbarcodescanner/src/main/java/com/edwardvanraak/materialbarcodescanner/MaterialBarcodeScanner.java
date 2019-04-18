@@ -1,11 +1,14 @@
 package com.edwardvanraak.materialbarcodescanner;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -16,6 +19,16 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 public class MaterialBarcodeScanner {
+    private AppCompatActivity activityCompat;
+    private int containerId;
+
+    public void setActivityCompat(AppCompatActivity activityCompat) {
+        this.activityCompat = activityCompat;
+    }
+
+    public void setContainerId(int containerId) {
+        this.containerId = containerId;
+    }
 
     /**
      * Request codes
@@ -43,7 +56,7 @@ public class MaterialBarcodeScanner {
     }
 
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
-    public void onBarcodeScannerResult(Barcode barcode){
+    public void onBarcodeScannerResult(Barcode barcode) {
         onResultListener.onResult(barcode);
         EventBus.getDefault().removeStickyEvent(barcode);
         EventBus.getDefault().unregister(this);
@@ -59,22 +72,26 @@ public class MaterialBarcodeScanner {
 
     /**
      * Start a scan for a barcode
-     *
+     * <p>
      * This opens a new activity with the parameters provided by the MaterialBarcodeScannerBuilder
      */
-    public void startScan(){
+    public void startScan() {
         EventBus.getDefault().register(this);
-        if(mMaterialBarcodeScannerBuilder.getActivity() == null){
+        if (mMaterialBarcodeScannerBuilder.getActivity() == null) {
             throw new RuntimeException("Could not start scan: Activity reference lost (please rebuild the MaterialBarcodeScanner before calling startScan)");
         }
         int mCameraPermission = ActivityCompat.checkSelfPermission(mMaterialBarcodeScannerBuilder.getActivity(), Manifest.permission.CAMERA);
         if (mCameraPermission != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission();
-        }else{
+        } else {
             //Open activity
             EventBus.getDefault().postSticky(this);
-            Intent intent = new Intent(mMaterialBarcodeScannerBuilder.getActivity(), MaterialBarcodeScannerActivity.class);
-            mMaterialBarcodeScannerBuilder.getActivity().startActivity(intent);
+            FragmentTransaction transaction = activityCompat.getSupportFragmentManager().beginTransaction();
+            transaction.add(containerId, new MaterialBarcodeScannerActivity());
+            transaction.addToBackStack(null);
+            transaction.commit();
+//            Intent intent = new Intent(mMaterialBarcodeScannerBuilder.getActivity(), MaterialBarcodeScannerActivity.class);
+//            mMaterialBarcodeScannerBuilder.getActivity().startActivity(intent);
         }
     }
 

@@ -70,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .build();
+        materialBarcodeScanner.setActivityCompat(this);
+        materialBarcodeScanner.setContainerId(R.id.content);
         materialBarcodeScanner.startScan();
     }
 

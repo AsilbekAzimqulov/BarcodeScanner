@@ -1,11 +1,16 @@
 package com.edwardvanraak.materialbarcodescanner;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,7 +30,7 @@ import java.io.IOException;
 
 import static junit.framework.Assert.assertNotNull;
 
-public class MaterialBarcodeScannerActivity extends AppCompatActivity {
+public class MaterialBarcodeScannerActivity extends Fragment {
 
     private static final int RC_HANDLE_GMS = 9001;
 
@@ -49,16 +54,13 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
 
     private boolean mFlashOn = false;
 
+
+    @Nullable
     @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        if(getWindow() != null){
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }else{
-            Log.e(TAG, "Barcode scanner could not go into fullscreen mode!");
-        }
-        setContentView(R.layout.barcode_capture);
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.barcode_capture,container,false);
     }
+
 
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onMaterialBarcodeScanner(MaterialBarcodeScanner materialBarcodeScanner){
@@ -70,7 +72,7 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
     }
 
     private void setupLayout() {
-        final TextView topTextView = (TextView) findViewById(R.id.topText);
+        final TextView topTextView = (TextView) getView().findViewById(R.id.topText);
         assertNotNull(topTextView);
         String topText = mMaterialBarcodeScannerBuilder.getText();
         if(!mMaterialBarcodeScannerBuilder.getText().equals("")){
@@ -82,7 +84,7 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
 
     private void setupCenterTracker() {
         if(mMaterialBarcodeScannerBuilder.getScannerMode() == MaterialBarcodeScanner.SCANNER_MODE_CENTER){
-            final ImageView centerTracker  = (ImageView) findViewById(R.id.barcode_square);
+            final ImageView centerTracker  = (ImageView) getView().findViewById(R.id.barcode_square);
             centerTracker.setImageResource(mMaterialBarcodeScannerBuilder.getTrackerResourceID());
             mGraphicOverlay.setVisibility(View.INVISIBLE);
         }
@@ -90,8 +92,8 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
 
     private void updateCenterTrackerForDetectedState() {
         if(mMaterialBarcodeScannerBuilder.getScannerMode() == MaterialBarcodeScanner.SCANNER_MODE_CENTER){
-            final ImageView centerTracker  = (ImageView) findViewById(R.id.barcode_square);
-            runOnUiThread(new Runnable() {
+            final ImageView centerTracker  = (ImageView) getView().findViewById(R.id.barcode_square);
+            getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     centerTracker.setImageResource(mMaterialBarcodeScannerBuilder.getTrackerDetectedResourceID());
@@ -101,8 +103,8 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
     }
 
     private void setupButtons() {
-        final LinearLayout flashOnButton = (LinearLayout)findViewById(R.id.flashIconButton);
-        final ImageView flashToggleIcon = (ImageView)findViewById(R.id.flashIcon);
+        final LinearLayout flashOnButton = (LinearLayout)getView().findViewById(R.id.flashIconButton);
+        final ImageView flashToggleIcon = (ImageView)getView().findViewById(R.id.flashIcon);
         assertNotNull(flashOnButton);
         flashOnButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -129,14 +131,14 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
      */
     private void startCameraSource() throws SecurityException {
         // check that the device has play services available.
-       mSoundPoolPlayer = new SoundPoolPlayer(this);
+       mSoundPoolPlayer = new SoundPoolPlayer(getContext());
         int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
-                getApplicationContext());
+                getActivity().getApplicationContext());
         if (code != ConnectionResult.SUCCESS) {
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS);
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(getActivity(), code, RC_HANDLE_GMS);
             dialog.show();
         }
-        mGraphicOverlay = (GraphicOverlay<BarcodeGraphic>)findViewById(R.id.graphicOverlay);
+        mGraphicOverlay = (GraphicOverlay<BarcodeGraphic>)getView().findViewById(R.id.graphicOverlay);
         BarcodeGraphicTracker.NewDetectionListener listener =  new BarcodeGraphicTracker.NewDetectionListener() {
             @Override
             public void onNewDetection(Barcode barcode) {
@@ -151,7 +153,7 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
                     mGraphicOverlay.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            finish();
+                            getActivity().getSupportFragmentManager().popBackStack();
                         }
                     },50);
                 }
@@ -162,7 +164,7 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
         CameraSource mCameraSource = mMaterialBarcodeScannerBuilder.getCameraSource();
         if (mCameraSource != null) {
             try {
-                mCameraSourcePreview = (CameraSourcePreview) findViewById(R.id.preview);
+                mCameraSourcePreview = (CameraSourcePreview) getView().findViewById(R.id.preview);
                 mCameraSourcePreview.start(mCameraSource, mGraphicOverlay);
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
@@ -206,7 +208,7 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
      * Stops the camera.
      */
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         if (mCameraSourcePreview != null) {
             mCameraSourcePreview.stop();
@@ -218,9 +220,9 @@ public class MaterialBarcodeScannerActivity extends AppCompatActivity {
      * rest of the processing pipeline.
      */
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
-        if(isFinishing()){
+        if(getActivity().isFinishing()){
             clean();
         }
     }
