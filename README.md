@@ -107,3 +107,4 @@ If you want to scan for a very specific combination of barcodes you can setup th
  * edwardvraak@gmail.com
  * [Donate with Paypal](https://www.paypal.me/EdwardvanRaak)
 
+# BarcodeScanner
