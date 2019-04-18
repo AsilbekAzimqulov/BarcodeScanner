@@ -21,7 +21,7 @@ Easy to use barcode reader for your Android Project (Uses Google Mobile Vision A
 ##1. Provide gradle dependency
 
 ```gradle
-compile 'com.edwardvanraak:MaterialBarcodeScanner:0.0.6-ALPHA'
+implementation 'com.github.Asilbek199816:BarcodeScanner:v0.0.1'
 ```
 
 ##2. Build a MaterialBarcodeScanner
@@ -45,6 +45,8 @@ compile 'com.edwardvanraak:MaterialBarcodeScanner:0.0.6-ALPHA'
                     }
                 })
                 .build();
+        materialBarcodeScanner.setActivityCompat(this);
+        materialBarcodeScanner.setContainerId(R.id.content);
         materialBarcodeScanner.startScan();
     }
 
@@ -104,7 +106,7 @@ If you want to scan for a very specific combination of barcodes you can setup th
 #Developed By
 
 * Edward van Raak
- * edwardvraak@gmail.com
+ * asilbekazimqulov1998@gmail.com
  * [Donate with Paypal](https://www.paypal.me/EdwardvanRaak)
 
 # BarcodeScanner
